@@ -8,14 +8,13 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
-  FileText,
+  Ambulance,
   Bell,
   Settings,
   ChevronLeft,
   LogOut,
   Search,
   Clock,
-  Ambulance,
   Hospital,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,12 +63,12 @@ interface DashboardMetric {
   color: string;
 }
 
-interface PatientRecord {
+interface Appointment {
   id: number;
-  name: string;
-  lastVisit: string;
-  nextAppointment: string;
-  status: "Checked-In" | "Scheduled" | "Cancelled";
+  patient: string;
+  time: string;
+  clinic: string;
+  status: "Scheduled" | "In Progress" | "Completed" | "Cancelled";
 }
 
 interface Driver {
@@ -83,33 +82,31 @@ interface Clinic {
   id: number;
   name: string;
   location: string;
-  patientsToday: number;
+  appointmentsToday: number;
   status: "Open" | "Closed";
 }
 
 const sidebarLinks: SidebarLink[] = [
-  { title: "Dashboard", href: "/staff", icon: LayoutDashboard },
-  { title: "Appointments", href: "/staff/appointments", icon: Calendar },
-  { title: "Patient Records", href: "/staff/records", icon: FileText },
-  { title: "Patient List", href: "/staff/patients", icon: Users },
-  { title: "Clinics", href: "/staff/clinics", icon: Hospital },
-  { title: "Drivers", href: "/staff/drivers", icon: Ambulance },
-  { title: "Notifications", href: "/staff/notifications", icon: Bell },
-  { title: "Settings", href: "/staff/settings", icon: Settings },
+  { title: "Dashboard", href: "/clinician-driver", icon: LayoutDashboard },
+  { title: "Appointments", href: "/clinician-driver/appointments", icon: Calendar },
+  { title: "Patients", href: "/clinician-driver/patients", icon: Users },
+  { title: "Clinics", href: "/clinician-driver/clinics", icon: Hospital },
+  { title: "Drivers", href: "/clinician-driver/drivers", icon: Ambulance },
+  { title: "Notifications", href: "/clinician-driver/notifications", icon: Bell },
+  { title: "Settings", href: "/clinician-driver/settings", icon: Settings },
 ];
 
 const dashboardMetrics: DashboardMetric[] = [
-  { title: "Patients Today", value: "25", icon: Users, color: "text-blue-600" },
-  { title: "Upcoming Appointments", value: "12", icon: Calendar, color: "text-green-600" },
-  { title: "Tasks / To-Do", value: "7", icon: FileText, color: "text-purple-600" },
+  { title: "Appointments Today", value: "12", icon: Calendar, color: "text-blue-600" },
+  { title: "Patients Scheduled", value: "25", icon: Users, color: "text-green-600" },
   { title: "Available Drivers", value: "5", icon: Ambulance, color: "text-red-600" },
   { title: "Active Clinics", value: "3", icon: Hospital, color: "text-indigo-600" },
   { title: "Notifications", value: "3", icon: Bell, color: "text-yellow-600" },
 ];
 
-const recentPatientRecords: PatientRecord[] = [
-  { id: 1, name: "John Doe", lastVisit: "2025-08-01", nextAppointment: "2025-09-05", status: "Checked-In" },
-  { id: 2, name: "Jane Smith", lastVisit: "2025-07-20", nextAppointment: "2025-09-03", status: "Scheduled" },
+const recentAppointments: Appointment[] = [
+  { id: 1, patient: "John Doe", time: "2025-09-05T10:00", clinic: "Main Clinic", status: "Scheduled" },
+  { id: 2, patient: "Jane Smith", time: "2025-09-05T11:30", clinic: "East Branch", status: "In Progress" },
 ];
 
 const drivers: Driver[] = [
@@ -119,19 +116,19 @@ const drivers: Driver[] = [
 ];
 
 const clinics: Clinic[] = [
-  { id: 1, name: "Main Clinic", location: "City Center", patientsToday: 15, status: "Open" },
-  { id: 2, name: "East Branch", location: "East Side", patientsToday: 8, status: "Open" },
-  { id: 3, name: "West Clinic", location: "West Side", patientsToday: 2, status: "Closed" },
+  { id: 1, name: "Main Clinic", location: "City Center", appointmentsToday: 12, status: "Open" },
+  { id: 2, name: "East Branch", location: "East Side", appointmentsToday: 8, status: "Open" },
+  { id: 3, name: "West Clinic", location: "West Side", appointmentsToday: 0, status: "Closed" },
 ];
 
 const calendarEvents = [
-  { title: "Appointment with John Doe", date: "2025-09-05" },
-  { title: "Shift Start - Clinic 1", start: "2025-09-03T09:00:00", end: "2025-09-03T17:00:00" },
-  { title: "Driver Assignment - Mike", date: "2025-09-04" },
-  { title: "Clinic Meeting", date: "2025-09-06T10:00:00" },
+  { title: "Appointment with John Doe", start: "2025-09-05T10:00:00", end: "2025-09-05T10:30:00" },
+  { title: "Appointment with Jane Smith", start: "2025-09-05T11:30:00", end: "2025-09-05T12:00:00" },
+  { title: "Driver Shift - Mike", start: "2025-09-05T08:00:00", end: "2025-09-05T16:00:00" },
+  { title: "Clinic Shift - Main Clinic", start: "2025-09-05T09:00:00", end: "2025-09-05T17:00:00" },
 ];
 
-export default function StaffDashboard() {
+export default function ClinicianDriverDashboard() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [selectedPatient, setSelectedPatient] = useState<string>("all");
   const pathname = usePathname();
@@ -151,7 +148,7 @@ export default function StaffDashboard() {
         )}
       >
         <div className="flex items-center h-16 px-4 border-b border-gray-200">
-          {!isCollapsed && <h1 className="text-xl font-bold text-blue-700">Wezi Staff</h1>}
+          {!isCollapsed && <h1 className="text-xl font-bold text-blue-700">Wezi Clinician/Driver</h1>}
           <Button
             variant="ghost"
             size="sm"
@@ -222,8 +219,8 @@ export default function StaffDashboard() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer focus:ring-2 focus:ring-blue-500" aria-label="User profile">
-                  <AvatarImage src="/staff-avatar.png" alt="Staff" onError={() => console.log("Failed to load avatar")} />
-                  <AvatarFallback>ST</AvatarFallback>
+                  <AvatarImage src="/clinician-driver-avatar.png" alt="Clinician/Driver" onError={() => console.log("Failed to load avatar")} />
+                  <AvatarFallback>CD</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -249,10 +246,10 @@ export default function StaffDashboard() {
 
         {/* Dashboard Content */}
         <main className="flex-1 p-6 overflow-y-auto">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900 animate-in fade-in">Staff Dashboard</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900 animate-in fade-in">Clinician/Driver Dashboard</h2>
 
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
             {dashboardMetrics.length > 0 ? (
               dashboardMetrics.map((metric) => (
                 <div
@@ -277,7 +274,7 @@ export default function StaffDashboard() {
 
           {/* Calendar Section */}
           <div className="bg-white p-6 rounded-lg shadow mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Shift / Appointments Calendar</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Appointments & Driver Shifts</h3>
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
@@ -293,12 +290,12 @@ export default function StaffDashboard() {
             />
           </div>
 
-          {/* Patient Records Preview */}
+          {/* Appointments Section */}
           <div className="bg-white p-6 rounded-lg shadow mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Recent Patients</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Recent Appointments</h3>
               <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-                <SelectTrigger className="w-[180px] focus:ring-2 focus:ring-blue-500" aria-label="Filter patients by name">
+                <SelectTrigger className="w-[180px] focus:ring-2 focus:ring-blue-500" aria-label="Filter appointments by patient">
                   <SelectValue placeholder="Filter by Patient" />
                 </SelectTrigger>
                 <SelectContent>
@@ -311,42 +308,41 @@ export default function StaffDashboard() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Last Visit</TableHead>
-                  <TableHead>Next Appointment</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Clinic</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentPatientRecords.length > 0 ? (
-                  recentPatientRecords
+                {recentAppointments.length > 0 ? (
+                  recentAppointments
                     .filter(
-                      (record) =>
+                      (appointment) =>
                         selectedPatient === "all" ||
-                        record.name.toLowerCase().replace(" ", "-") === selectedPatient
+                        appointment.patient.toLowerCase().replace(" ", "-") === selectedPatient
                     )
-                    .map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.name}</TableCell>
-                        <TableCell className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          {record.lastVisit}
-                        </TableCell>
+                    .map((appointment) => (
+                      <TableRow key={appointment.id}>
+                        <TableCell>{appointment.patient}</TableCell>
                         <TableCell className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-500" />
-                          {record.nextAppointment}
+                          {appointment.time}
                         </TableCell>
+                        <TableCell>{appointment.clinic}</TableCell>
                         <TableCell>
                           <Badge
                             variant={
-                              record.status === "Checked-In"
-                                ? "default"
-                                : record.status === "Scheduled"
+                              appointment.status === "Scheduled"
                                 ? "secondary"
+                                : appointment.status === "In Progress"
+                                ? "default"
+                                : appointment.status === "Completed"
+                                ? "default"
                                 : "destructive"
                             }
                           >
-                            {record.status}
+                            {appointment.status}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -354,7 +350,7 @@ export default function StaffDashboard() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center text-gray-500">
-                      No patients available
+                      No appointments available
                     </TableCell>
                   </TableRow>
                 )}
@@ -364,7 +360,7 @@ export default function StaffDashboard() {
 
           {/* Drivers Section */}
           <div className="bg-white p-6 rounded-lg shadow mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Drivers Status</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Driver Status</h3>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -413,7 +409,7 @@ export default function StaffDashboard() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead>Patients Today</TableHead>
+                  <TableHead>Appointments Today</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -423,7 +419,7 @@ export default function StaffDashboard() {
                     <TableRow key={clinic.id}>
                       <TableCell>{clinic.name}</TableCell>
                       <TableCell>{clinic.location}</TableCell>
-                      <TableCell>{clinic.patientsToday}</TableCell>
+                      <TableCell>{clinic.appointmentsToday}</TableCell>
                       <TableCell>
                         <Badge variant={clinic.status === "Open" ? "default" : "destructive"}>
                           {clinic.status}
