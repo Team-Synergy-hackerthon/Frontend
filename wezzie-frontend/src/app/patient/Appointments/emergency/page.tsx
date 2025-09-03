@@ -7,16 +7,16 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Calendar,
-  Users,
-  Ambulance,
+  FileText,
+  User,
   Bell,
-  Settings,
   ChevronLeft,
   LogOut,
   Search,
+  Settings,
+  ChevronDown,
+  Ambulance,
   Upload,
-  FileText,
-  Hospital,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,14 +39,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
 // Type definitions
@@ -56,34 +48,7 @@ interface SidebarLink {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-interface Shift {
-  id: number;
-  date: string;
-  startTime: string;
-  endTime: string;
-}
-
-interface EmergencyResponse {
-  id: number;
-  date: string;
-  location: string;
-  status: "Completed" | "In Progress" | "Cancelled";
-}
-
-interface ClinicianAnalytics {
-  appointmentsBooked: number;
-  recordsWritten: number;
-  patientsSeen: number;
-}
-
-interface DriverAnalytics {
-  tripsCompleted: number;
-  averageResponseTime: string;
-  totalDistance: number;
-}
-
 interface ProfileData {
-  role: "Clinician" | "Driver";
   name: string;
   age: number;
   gender: string;
@@ -95,62 +60,31 @@ interface ProfileData {
     email: boolean;
     sms: boolean;
   };
-  department?: string; // Clinician-specific
-  shifts?: Shift[]; // Clinician-specific
-  clinicianAnalytics?: ClinicianAnalytics; // Clinician-specific
-  ambulanceStatus?: "Available" | "Under Maintenance" | "In Route"; // Driver-specific
-  emergencyResponses?: EmergencyResponse[]; // Driver-specific
-  driverAnalytics?: DriverAnalytics; // Driver-specific
 }
 
 const sidebarLinks: SidebarLink[] = [
-  { title: "Dashboard", href: "/clinician-driver", icon: LayoutDashboard },
-  { title: "Appointments", href: "/clinician-driver/appointments", icon: Calendar },
-  { title: "Patients", href: "/clinician-driver/patients", icon: Users },
-  { title: "Clinics", href: "/clinician-driver/clinics", icon: Hospital },
-  { title: "Drivers", href: "/clinician-driver/drivers", icon: Ambulance },
-  { title: "Notifications", href: "/clinician-driver/notifications", icon: Bell },
-  { title: "Settings", href: "/clinician-driver/settings", icon: Settings },
+  { title: "Dashboard", href: "/patient", icon: LayoutDashboard },
+  { title: "Appointments", href: "/patient/appointments", icon: Calendar },
+  { title: "Medical Records", href: "/patient/records", icon: FileText },
+  { title: "Profile", href: "/patient/profile", icon: User },
+  { title: "Notifications", href: "/patient/notifications", icon: Bell },
 ];
 
 const initialProfileData: ProfileData = {
-  role: "Clinician", // Toggle between "Clinician" and "Driver" for demo
-  name: "Dr. Jane Smith",
-  age: 42,
-  gender: "Female",
+  name: "John K. Doe",
+  age: 35,
+  gender: "Male",
   location: "Lilongwe, Malawi",
   contactNumber: "+265-999-123-456",
   emergencyContact: "+265-888-987-654",
-  profilePicture: "/clinician-driver-avatar.png",
+  profilePicture: "/patient-avatar.png",
   notificationPreferences: {
     email: true,
     sms: false,
   },
-  department: "Cardiology", // Clinician-specific
-  shifts: [
-    { id: 1, date: "2025-09-05", startTime: "08:00", endTime: "16:00" },
-    { id: 2, date: "2025-09-06", startTime: "09:00", endTime: "17:00" },
-  ],
-  clinicianAnalytics: {
-    appointmentsBooked: 45,
-    recordsWritten: 32,
-    patientsSeen: 28,
-  },
-  // For Driver role, swap with:
-  // role: "Driver",
-  // ambulanceStatus: "Available",
-  // emergencyResponses: [
-  //   { id: 1, date: "2025-09-01", location: "City Center", status: "Completed" },
-  //   { id: 2, date: "2025-09-02", location: "East Side", status: "In Progress" },
-  // ],
-  // driverAnalytics: {
-  //   tripsCompleted: 12,
-  //   averageResponseTime: "8 min",
-  //   totalDistance: 245,
-  // },
 };
 
-export default function StaffProfilePage() {
+export default function ProfilePage() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [profileData, setProfileData] = useState<ProfileData>(initialProfileData);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -170,8 +104,6 @@ export default function StaffProfilePage() {
     if (!profileData.location.trim()) newErrors.location = "Location is required";
     if (!profileData.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
     if (!profileData.emergencyContact.trim()) newErrors.emergencyContact = "Emergency contact is required";
-    if (profileData.role === "Clinician" && !profileData.department?.trim())
-      newErrors.department = "Department is required";
     if (newPassword && newPassword.length < 8) newErrors.newPassword = "New password must be at least 8 characters";
     if (newPassword && newPassword !== confirmNewPassword) newErrors.confirmNewPassword = "Passwords do not match";
     setErrors(newErrors);
@@ -199,6 +131,7 @@ export default function StaffProfilePage() {
 
     // Simulate password reset
     if (newPassword) {
+      // In a real app, verify currentPassword and update password via API
       toast({
         title: "Password Updated",
         description: "Your password has been successfully updated.",
@@ -231,7 +164,7 @@ export default function StaffProfilePage() {
         )}
       >
         <div className="flex items-center h-16 px-4 border-b border-gray-200">
-          {!isCollapsed && <h1 className="text-xl font-bold text-blue-700">Wezi Clinician/Driver</h1>}
+          {!isCollapsed && <h1 className="text-xl font-bold text-blue-700">Wezi Patient</h1>}
           <Button
             variant="ghost"
             size="sm"
@@ -260,7 +193,30 @@ export default function StaffProfilePage() {
                 aria-label={link.title}
               >
                 <link.icon className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
-                {!isCollapsed && <span>{link.title}</span>}
+                {!isCollapsed && (
+                  <div className="flex items-center w-full">
+                    <span>{link.title}</span>
+                    {link.title === "Appointments" && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="ml-auto">
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="animate-none">
+                          <DropdownMenuItem className="focus:bg-blue-50">
+                            <Calendar className="mr-2 h-4 w-4" />
+                            <Link href="/patient/appointments/book-medical">Book Medical Appointment</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="focus:bg-blue-50">
+                            <Ambulance className="mr-2 h-4 w-4" />
+                            <Link href="/patient/appointments/book-ambulance">Book Ambulance</Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                )}
               </Link>
             );
           })}
@@ -300,21 +256,21 @@ export default function StaffProfilePage() {
             <Button variant="ghost" size="sm" className="relative focus:ring-2 focus:ring-blue-500" aria-label="Notifications">
               <Bell className="h-5 w-5 text-gray-500" />
               <Badge variant="destructive" className="absolute top-0 right-0 h-4 w-4 p-0 flex items-center justify-center text-xs">
-                3
+                1
               </Badge>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer focus:ring-2 focus:ring-blue-500" aria-label="User profile">
-                  <AvatarImage src={profileData.profilePicture} alt="Clinician/Driver" onError={() => console.log("Failed to load avatar")} />
-                  <AvatarFallback>CD</AvatarFallback>
+                  <AvatarImage src={profileData.profilePicture} alt="Patient" onError={() => console.log("Failed to load avatar")} />
+                  <AvatarFallback>PT</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="animate-none">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="focus:bg-blue-50">
-                  <Users className="mr-2 h-4 w-4" />
+                  <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="focus:bg-blue-50">
@@ -333,7 +289,7 @@ export default function StaffProfilePage() {
 
         {/* Profile Content */}
         <main className="flex-1 p-6 overflow-y-auto">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Staff Profile</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">Your Profile</h2>
 
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-6">
@@ -354,7 +310,7 @@ export default function StaffProfilePage() {
               <div className="flex flex-col items-center">
                 <Avatar className="h-24 w-24 mb-4">
                   <AvatarImage src={profileData.profilePicture} alt="Profile" />
-                  <AvatarFallback>CD</AvatarFallback>
+                  <AvatarFallback>PT</AvatarFallback>
                 </Avatar>
                 {isEditing && (
                   <div className="flex items-center gap-2">
@@ -466,54 +422,6 @@ export default function StaffProfilePage() {
                     )}
                     {errors.emergencyContact && <p className="text-red-500 text-sm">{errors.emergencyContact}</p>}
                   </div>
-                  {profileData.role === "Clinician" && (
-                    <div>
-                      <Label htmlFor="department">Department</Label>
-                      {isEditing ? (
-                        <Select
-                          value={profileData.department}
-                          onValueChange={(value) => setProfileData({ ...profileData, department: value })}
-                        >
-                          <SelectTrigger className={cn(errors.department && "border-red-500")}>
-                            <SelectValue placeholder="Select department" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Cardiology">Cardiology</SelectItem>
-                            <SelectItem value="General Medicine">General Medicine</SelectItem>
-                            <SelectItem value="Orthopedics">Orthopedics</SelectItem>
-                            <SelectItem value="Infectious Diseases">Infectious Diseases</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-gray-900">{profileData.department}</p>
-                      )}
-                      {errors.department && <p className="text-red-500 text-sm">{errors.department}</p>}
-                    </div>
-                  )}
-                  {profileData.role === "Driver" && (
-                    <div>
-                      <Label htmlFor="ambulanceStatus">Ambulance Status</Label>
-                      {isEditing ? (
-                        <Select
-                          value={profileData.ambulanceStatus}
-                          onValueChange={(value) =>
-                            setProfileData({ ...profileData, ambulanceStatus: value as any })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Available">Available</SelectItem>
-                            <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
-                            <SelectItem value="In Route">In Route</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-gray-900">{profileData.ambulanceStatus}</p>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -594,142 +502,6 @@ export default function StaffProfilePage() {
                 </div>
               </div>
             </div>
-
-            {/* Clinician-Specific: Shift Schedule */}
-            {profileData.role === "Clinician" && (
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Shift Schedule</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Start Time</TableHead>
-                      <TableHead>End Time</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {profileData.shifts?.length ? (
-                      profileData.shifts.map((shift) => (
-                        <TableRow key={shift.id}>
-                          <TableCell className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-500" />
-                            {shift.date}
-                          </TableCell>
-                          <TableCell>{shift.startTime}</TableCell>
-                          <TableCell>{shift.endTime}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-gray-500">
-                          No shifts scheduled
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-
-            {/* Clinician-Specific: Analytics */}
-            {profileData.role === "Clinician" && (
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Performance Analytics</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500">Appointments Booked</p>
-                    <p className="text-2xl font-bold text-gray-900">{profileData.clinicianAnalytics?.appointmentsBooked}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500">Medical Records Written</p>
-                    <p className="text-2xl font-bold text-gray-900">{profileData.clinicianAnalytics?.recordsWritten}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500">Patients Seen</p>
-                    <p className="text-2xl font-bold text-gray-900">{profileData.clinicianAnalytics?.patientsSeen}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Driver-Specific: Ambulance Status */}
-            {profileData.role === "Driver" && (
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Ambulance Status</h3>
-                <Badge variant={profileData.ambulanceStatus === "Available" ? "default" : profileData.ambulanceStatus === "In Route" ? "secondary" : "destructive"}>
-                  {profileData.ambulanceStatus}
-                </Badge>
-              </div>
-            )}
-
-            {/* Driver-Specific: Emergency Response History */}
-            {profileData.role === "Driver" && (
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Emergency Response History</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {profileData.emergencyResponses?.length ? (
-                      profileData.emergencyResponses.map((response) => (
-                        <TableRow key={response.id}>
-                          <TableCell className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-500" />
-                            {response.date}
-                          </TableCell>
-                          <TableCell>{response.location}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                response.status === "Completed"
-                                  ? "default"
-                                  : response.status === "In Progress"
-                                  ? "secondary"
-                                  : "destructive"
-                              }
-                            >
-                              {response.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-gray-500">
-                          No emergency responses recorded
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-
-            {/* Driver-Specific: Analytics */}
-            {profileData.role === "Driver" && (
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Performance Analytics</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500">Trips Completed</p>
-                    <p className="text-2xl font-bold text-gray-900">{profileData.driverAnalytics?.tripsCompleted}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500">Average Response Time</p>
-                    <p className="text-2xl font-bold text-gray-900">{profileData.driverAnalytics?.averageResponseTime}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500">Total Distance (km)</p>
-                    <p className="text-2xl font-bold text-gray-900">{profileData.driverAnalytics?.totalDistance}</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Save Button */}
             {isEditing && (
