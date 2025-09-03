@@ -104,14 +104,15 @@ interface ProfileData {
 }
 
 const sidebarLinks: SidebarLink[] = [
-  { title: "Dashboard", href: "/clinician-driver", icon: LayoutDashboard },
-  { title: "Appointments", href: "/clinician-driver/appointments", icon: Calendar },
-  { title: "Patients", href: "/clinician-driver/patients", icon: Users },
-  { title: "Clinics", href: "/clinician-driver/clinics", icon: Hospital },
-  { title: "Drivers", href: "/clinician-driver/drivers", icon: Ambulance },
-  { title: "Notifications", href: "/clinician-driver/notifications", icon: Bell },
-  { title: "Settings", href: "/clinician-driver/settings", icon: Settings },
+  { title: "Dashboard", href: "/staff", icon: LayoutDashboard },
+  { title: "Appointments", href: "/staff/appointments", icon: Calendar },
+  { title: "Patients", href: "/staff/patients", icon: Users },
+  { title: "Clinics", href: "/staff/clinics", icon: Hospital },
+  { title: "Drivers", href: "/staff/drivers", icon: Ambulance },
+  { title: "Emergency Requests", href: "/staff/emergency-requests", icon: Bell },
+  { title: "Settings", href: "/staff/settings", icon: Settings },
 ];
+
 
 const initialProfileData: ProfileData = {
   role: "Clinician", // Toggle between "Clinician" and "Driver" for demo
@@ -121,7 +122,7 @@ const initialProfileData: ProfileData = {
   location: "Lilongwe, Malawi",
   contactNumber: "+265-999-123-456",
   emergencyContact: "+265-888-987-654",
-  profilePicture: "/clinician-driver-avatar.png",
+  profilePicture: "/staff-avatar.png",
   notificationPreferences: {
     email: true,
     sms: false,

@@ -17,6 +17,7 @@ import {
   Search,
   Ambulance,
   Clock,
+  Key,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -50,10 +51,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 
 // Type definitions
 interface SidebarLink {
@@ -65,8 +68,17 @@ interface SidebarLink {
 interface User {
   id: number;
   name: string;
+  email: string;
+  username: string;
   role: "Admin" | "Clinician" | "Driver";
+  gender: "Male" | "Female" | "Other";
   status: "Active" | "Inactive";
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  username?: string;
 }
 
 const sidebarLinks: SidebarLink[] = [
@@ -80,11 +92,51 @@ const sidebarLinks: SidebarLink[] = [
 ];
 
 const initialUsers: User[] = [
-  { id: 1, name: "Dr. Alice Brown", role: "Clinician", status: "Active" },
-  { id: 2, name: "Bob Carter", role: "Driver", status: "Active" },
-  { id: 3, name: "Charlie Davis", role: "Clinician", status: "Inactive" },
-  { id: 4, name: "Dana Evans", role: "Admin", status: "Active" },
-  { id: 5, name: "Eve Franklin", role: "Driver", status: "Active" },
+  {
+    id: 1,
+    name: "Dr. Alice Brown",
+    email: "alice.brown@wezi.com",
+    username: "alice_brown",
+    role: "Clinician",
+    gender: "Female",
+    status: "Active",
+  },
+  {
+    id: 2,
+    name: "Bob Carter",
+    email: "bob.carter@wezi.com",
+    username: "bob_carter",
+    role: "Driver",
+    gender: "Male",
+    status: "Active",
+  },
+  {
+    id: 3,
+    name: "Charlie Davis",
+    email: "charlie.davis@wezi.com",
+    username: "charlie_davis",
+    role: "Clinician",
+    gender: "Male",
+    status: "Inactive",
+  },
+  {
+    id: 4,
+    name: "Dana Evans",
+    email: "dana.evans@wezi.com",
+    username: "dana_evans",
+    role: "Admin",
+    gender: "Female",
+    status: "Active",
+  },
+  {
+    id: 5,
+    name: "Eve Franklin",
+    email: "eve.franklin@wezi.com",
+    username: "eve_franklin",
+    role: "Driver",
+    gender: "Female",
+    status: "Active",
+  },
 ];
 
 export default function UserManagement() {
@@ -94,45 +146,81 @@ export default function UserManagement() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [formData, setFormData] = useState<{ name: string; role: "Admin" | "Clinician" | "Driver"; status: "Active" | "Inactive" }>({
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("all");
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    username: string;
+    role: "Admin" | "Clinician" | "Driver";
+    gender: "Male" | "Female" | "Other";
+    status: "Active" | "Inactive";
+  }>({
     name: "",
+    email: "",
+    username: "",
     role: "Clinician",
+    gender: "Male",
     status: "Active",
   });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    router.push("/auth/login");
+  const validateForm = () => {
+    const errors: FormErrors = {};
+    if (!formData.name || formData.name.length < 2) {
+      errors.name = "Name is required and must be at least 2 characters";
+    }
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "A valid email is required";
+    }
+    if (!formData.username || !/^[a-zA-Z0-9_-]{3,}$/.test(formData.username)) {
+      errors.username = "Username is required and must be at least 3 characters (alphanumeric, underscores, or hyphens)";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+    setFormErrors({ ...formErrors, [e.target.id]: undefined });
   };
 
   const handleSelectChange = (value: string, field: string) => {
     setFormData({ ...formData, [field]: value });
+    setFormErrors({ ...formErrors, [field]: undefined });
   };
 
   const handleAddUser = () => {
+    if (!validateForm()) return;
     const newUser = {
       id: users.length + 1,
       ...formData,
     };
     setUsers([...users, newUser]);
     setIsAddModalOpen(false);
-    setFormData({ name: "", role: "Clinician", status: "Active" });
+    setFormData({ name: "", email: "", username: "", role: "Clinician", gender: "Male", status: "Active" });
+    setFormErrors({});
+    toast({
+      title: "User Added",
+      description: `${newUser.name} has been added successfully.`,
+    });
   };
 
   const handleEditUser = () => {
-    if (selectedUser) {
-      const updatedUsers = users.map((user) =>
-        user.id === selectedUser.id ? { ...user, ...formData } : user
-      );
-      setUsers(updatedUsers);
-      setIsEditModalOpen(false);
-      setSelectedUser(null);
-    }
+    if (!validateForm() || !selectedUser) return;
+    const updatedUsers = users.map((user) =>
+      user.id === selectedUser.id ? { ...user, ...formData } : user
+    );
+    setUsers(updatedUsers);
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+    setFormErrors({});
+    toast({
+      title: "User Updated",
+      description: `${formData.name} has been updated successfully.`,
+    });
   };
 
   const handleDeleteUser = () => {
@@ -140,13 +228,47 @@ export default function UserManagement() {
       const updatedUsers = users.filter((user) => user.id !== selectedUser.id);
       setUsers(updatedUsers);
       setIsDeleteModalOpen(false);
+      toast({
+        title: "User Deleted",
+        description: `${selectedUser.name} has been deleted successfully.`,
+      });
       setSelectedUser(null);
     }
   };
 
+  const handleResetPassword = () => {
+    if (selectedUser) {
+      // Simulate sending reset password email
+      toast({
+        title: "Password Reset",
+        description: `A password reset email has been sent to ${selectedUser.email}.`,
+      });
+      setIsResetPasswordModalOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleSuspendUser = (user: User) => {
+    const updatedUsers = users.map((u) =>
+      u.id === user.id ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" } : u
+    );
+    setUsers(updatedUsers);
+    toast({
+      title: user.status === "Active" ? "User Suspended" : "User Activated",
+      description: `${user.name} has been ${user.status === "Active" ? "suspended" : "activated"}.`,
+    });
+  };
+
   const openEditModal = (user: User) => {
     setSelectedUser(user);
-    setFormData({ name: user.name, role: user.role, status: user.status });
+    setFormData({
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      gender: user.gender,
+      status: user.status,
+    });
     setIsEditModalOpen(true);
   };
 
@@ -155,12 +277,14 @@ export default function UserManagement() {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSuspendUser = (user: User) => {
-    const updatedUsers = users.map((u) =>
-      u.id === user.id ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" } : u
-    );
-    setUsers(updatedUsers);
+  const openResetPasswordModal = (user: User) => {
+    setSelectedUser(user);
+    setIsResetPasswordModalOpen(true);
   };
+
+  const filteredUsers = selectedRole === "all"
+    ? users
+    : users.filter((user) => user.role.toLowerCase() === selectedRole);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -214,7 +338,7 @@ export default function UserManagement() {
               "flex items-center w-full px-3 py-2 rounded hover:bg-gray-100 text-gray-600 focus:ring-2 focus:ring-blue-500",
               isCollapsed && "justify-center"
             )}
-            onClick={handleLogout}
+            onClick={() => router.push("/auth/login")}
             aria-label="Logout"
           >
             <LogOut className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
@@ -230,7 +354,11 @@ export default function UserManagement() {
           <div className="flex-1 flex items-center">
             <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input className="pl-10 focus:ring-2 focus:ring-blue-500" placeholder="Search users..." aria-label="Search users" />
+              <Input
+                className="pl-10 focus:ring-2 focus:ring-blue-500"
+                placeholder="Search users..."
+                aria-label="Search users"
+              />
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -259,7 +387,7 @@ export default function UserManagement() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="focus:bg-blue-50" onClick={handleLogout}>
+                <DropdownMenuItem className="focus:bg-blue-50" onClick={() => router.push("/auth/login")}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
@@ -272,67 +400,144 @@ export default function UserManagement() {
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-gray-900">User Management</h2>
-            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-              <DialogTrigger asChild>
-                <Button variant="default">Add User</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="col-span-3"
-                    />
+            <div className="flex items-center gap-4">
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="w-[180px] focus:ring-2 focus:ring-blue-500" aria-label="Filter users by role">
+                  <SelectValue placeholder="Filter by Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="clinician">Clinician</SelectItem>
+                  <SelectItem value="driver">Driver</SelectItem>
+                </SelectContent>
+              </Select>
+              <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Add User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New User</DialogTitle>
+                    <DialogDescription>Enter the details for the new user below.</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right font-medium">
+                        Name
+                      </Label>
+                      <div className="col-span-3">
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className={cn("focus:ring-2 focus:ring-blue-500", formErrors.name && "border-red-500")}
+                          placeholder="Enter full name"
+                        />
+                        {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="email" className="text-right font-medium">
+                        Email
+                      </Label>
+                      <div className="col-span-3">
+                        <Input
+                          id="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className={cn("focus:ring-2 focus:ring-blue-500", formErrors.email && "border-red-500")}
+                          placeholder="Enter email"
+                        />
+                        {formErrors.email && <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="username" className="text-right font-medium">
+                        Username
+                      </Label>
+                      <div className="col-span-3">
+                        <Input
+                          id="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
+                          className={cn("focus:ring-2 focus:ring-blue-500", formErrors.username && "border-red-500")}
+                          placeholder="Enter username"
+                        />
+                        {formErrors.username && <p className="text-sm text-red-500 mt-1">{formErrors.username}</p>}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="role" className="text-right font-medium">
+                        Role
+                      </Label>
+                      <Select
+                        value={formData.role}
+                        onValueChange={(value) => handleSelectChange(value, "role")}
+                      >
+                        <SelectTrigger className="col-span-3 focus:ring-2 focus:ring-blue-500">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="Clinician">Clinician</SelectItem>
+                          <SelectItem value="Driver">Driver</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="gender" className="text-right font-medium">
+                        Gender
+                      </Label>
+                      <Select
+                        value={formData.gender}
+                        onValueChange={(value) => handleSelectChange(value, "gender")}
+                      >
+                        <SelectTrigger className="col-span-3 focus:ring-2 focus:ring-blue-500">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="status" className="text-right font-medium">
+                        Status
+                      </Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value) => handleSelectChange(value, "status")}
+                      >
+                        <SelectTrigger className="col-span-3 focus:ring-2 focus:ring-blue-500">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">
-                      Role
-                    </Label>
-                    <Select
-                      value={formData.role}
-                      onValueChange={(value) => handleSelectChange(value, "role")}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={handleAddUser}
+                      disabled={Object.keys(formErrors).length > 0 || !formData.name || !formData.email || !formData.username}
                     >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="Clinician">Clinician</SelectItem>
-                        <SelectItem value="Driver">Driver</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="status" className="text-right">
-                      Status
-                    </Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => handleSelectChange(value, "status")}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleAddUser}>Add User</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                      Add User
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow">
@@ -340,17 +545,23 @@ export default function UserManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Username</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Gender</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.length > 0 ? (
-                  users.map((user) => (
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.username}</TableCell>
                       <TableCell>{user.role}</TableCell>
+                      <TableCell>{user.gender}</TableCell>
                       <TableCell>
                         <Badge variant={user.status === "Active" ? "default" : "destructive"}>
                           {user.status}
@@ -366,12 +577,21 @@ export default function UserManagement() {
                         <Button variant="destructive" size="sm" onClick={() => openDeleteModal(user)}>
                           Delete
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openResetPasswordModal(user)}
+                          className="flex items-center gap-1"
+                        >
+                          <Key className="h-4 w-4" />
+                          Reset
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-gray-500">
+                    <TableCell colSpan={7} className="text-center text-gray-500">
                       No users available
                     </TableCell>
                   </TableRow>
@@ -384,31 +604,66 @@ export default function UserManagement() {
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update the details for {selectedUser?.name} below.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
+              <Label htmlFor="name" className="text-right font-medium">
                 Name
               </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
+              <div className="col-span-3">
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className={cn("focus:ring-2 focus:ring-blue-500", formErrors.name && "border-red-500")}
+                  placeholder="Enter full name"
+                />
+                {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
+              <Label htmlFor="email" className="text-right font-medium">
+                Email
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={cn("focus:ring-2 focus:ring-blue-500", formErrors.email && "border-red-500")}
+                  placeholder="Enter email"
+                />
+                {formErrors.email && <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="username" className="text-right font-medium">
+                Username
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className={cn("focus:ring-2 focus:ring-blue-500", formErrors.username && "border-red-500")}
+                  placeholder="Enter username"
+                />
+                {formErrors.username && <p className="text-sm text-red-500 mt-1">{formErrors.username}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="text-right font-medium">
                 Role
               </Label>
               <Select
                 value={formData.role}
                 onValueChange={(value) => handleSelectChange(value, "role")}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className="col-span-3 focus:ring-2 focus:ring-blue-500">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -419,14 +674,32 @@ export default function UserManagement() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
+              <Label htmlFor="gender" className="text-right font-medium">
+                Gender
+              </Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => handleSelectChange(value, "gender")}
+              >
+                <SelectTrigger className="col-span-3 focus:ring-2 focus:ring-blue-500">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right font-medium">
                 Status
               </Label>
               <Select
                 value={formData.status}
                 onValueChange={(value) => handleSelectChange(value, "status")}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className="col-span-3 focus:ring-2 focus:ring-blue-500">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -437,24 +710,61 @@ export default function UserManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleEditUser}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleEditUser}
+              disabled={Object.keys(formErrors).length > 0 || !formData.name || !formData.email || !formData.username}
+            >
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedUser?.name}? This action cannot be undone.
+            </DialogDescription>
           </DialogHeader>
-          <p>Are you sure you want to delete {selectedUser?.name}?</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteUser}>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleDeleteUser}
+            >
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Modal */}
+      <Dialog open={isResetPasswordModalOpen} onOpenChange={setIsResetPasswordModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Send a password reset email to {selectedUser?.email}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResetPasswordModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleResetPassword}
+            >
+              Send Reset Email
             </Button>
           </DialogFooter>
         </DialogContent>
