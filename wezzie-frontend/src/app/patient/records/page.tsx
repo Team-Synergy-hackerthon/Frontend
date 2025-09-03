@@ -13,8 +13,6 @@ import {
   ChevronLeft,
   LogOut,
   Search,
-  Clock,
-  Clipboard,
   Settings,
   ChevronDown,
   Ambulance,
@@ -46,10 +44,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
 
 // Type definitions
 interface SidebarLink {
@@ -58,19 +52,18 @@ interface SidebarLink {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-interface DashboardMetric {
-  title: string;
-  value: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}
-
 interface MedicalRecord {
   id: number;
   date: string;
-  type: string;
-  doctor: string;
-  notes: string;
+  symptoms: string[];
+  diagnosis: string;
+  causeOfVisit: string;
+  prescription: string[];
+  clinician: string;
+  department: string;
+  followUpNeeded: boolean;
+  followUpDate?: string;
+   Recomandations?: string | null;
 }
 
 const sidebarLinks: SidebarLink[] = [
@@ -81,32 +74,76 @@ const sidebarLinks: SidebarLink[] = [
   { title: "Notifications", href: "/patient/notifications", icon: Bell },
 ];
 
-const dashboardMetrics: DashboardMetric[] = [
-  { title: "Upcoming Appointments", value: "2", icon: Calendar, color: "text-blue-600" },
-  { title: "Recent Lab Results", value: "3", icon: FileText, color: "text-green-600" },
-  { title: "Prescriptions", value: "5", icon: Clipboard, color: "text-purple-600" },
-  { title: "Notifications", value: "1", icon: Bell, color: "text-yellow-600" },
-];
-
-const recentMedicalRecords: MedicalRecord[] = [
-  { id: 1, date: "2025-08-01", type: "Lab Result", doctor: "Dr. John Doe", notes: "Normal" },
-  { id: 2, date: "2025-07-20", type: "Consultation", doctor: "Dr. Jane Smith", notes: "Follow-up needed" },
-];
-
-const calendarEvents = [
-  { title: "Appointment with Dr. John Doe", start: "2025-09-05T10:00:00", end: "2025-09-05T10:30:00" },
-  { title: "Appointment with Dr. Jane Smith", start: "2025-09-05T11:30:00", end: "2025-09-05T12:00:00" },
+const medicalRecords: MedicalRecord[] = [
+  {
+    id: 1,
+    date: "2025-08-01",
+    symptoms: ["Fatigue", "Headache"],
+    diagnosis: "Routine Checkup",
+    causeOfVisit: "Annual physical exam",
+    prescription: ["Paracetamol 500mg as needed"],
+    clinician: "Dr. John Doe",
+    department: "General Medicine",
+    followUpNeeded: false,
+    Recomandations: "Normal vitals, advised regular exercise",
+  },
+  {
+    id: 2,
+    date: "2025-07-20",
+    symptoms: ["High blood pressure", "Dizziness"],
+    diagnosis: "Hypertension",
+    causeOfVisit: "Persistent high blood pressure readings",
+    prescription: ["Amlodipine 5mg daily", "Hydrochlorothiazide 25mg daily"],
+    clinician: "Dr. Jane Smith",
+    department: "Cardiology",
+    followUpNeeded: true,
+    followUpDate: "2025-08-20",
+  },
+  {
+    id: 3,
+    date: "2025-06-15",
+    symptoms: ["Cough", "Fever", "Sore throat"],
+    diagnosis: "Upper Respiratory Infection",
+    causeOfVisit: "Persistent cough and fever",
+    prescription: ["Azithromycin 500mg for 5 days"],
+    clinician: "Dr. Alice Brown",
+    department: "Infectious Diseases",
+    followUpNeeded: true,
+    followUpDate: "2025-06-22",
+  },
+  {
+    id: 4,
+    date: "2025-05-10",
+    symptoms: ["Joint pain", "Swelling"],
+    diagnosis: "Arthritis",
+    causeOfVisit: "Chronic knee pain",
+    prescription: ["Ibuprofen 400mg as needed"],
+    clinician: "Dr. Michael Green",
+    department: "Orthopedics",
+    followUpNeeded: false,
+  },
 ];
 
 export default function PatientDashboard() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [selectedRecord, setSelectedRecord] = useState<string>("all");
+  const [filter, setFilter] = useState<string>("all");
+  const [sortByFollowUp, setSortByFollowUp] = useState<boolean>(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    router.push("/auth/login");
-  };
+  const filteredRecords = medicalRecords
+    .filter((record) => {
+      if (filter === "all") return true;
+      if (filter === "follow-up") return record.followUpNeeded;
+      if (filter === "no-follow-up") return !record.followUpNeeded;
+      return record.diagnosis.toLowerCase().includes(filter.toLowerCase());
+    })
+    .sort((a, b) => {
+      if (sortByFollowUp) {
+        return a.followUpNeeded === b.followUpNeeded ? 0 : a.followUpNeeded ? -1 : 1;
+      }
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -183,7 +220,7 @@ export default function PatientDashboard() {
               "flex items-center w-full px-3 py-2 rounded hover:bg-gray-100 text-gray-600 focus:ring-2 focus:ring-blue-500",
               isCollapsed && "justify-center"
             )}
-            onClick={handleLogout}
+            onClick={() => router.push("/auth/login")}
             aria-label="Logout"
           >
             <LogOut className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
@@ -199,7 +236,12 @@ export default function PatientDashboard() {
           <div className="flex-1 flex items-center">
             <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input className="pl-10 focus:ring-2 focus:ring-blue-500" placeholder="Search..." aria-label="Search dashboard" />
+              <Input
+                className="pl-10 focus:ring-2 focus:ring-blue-500"
+                placeholder="Search by diagnosis..."
+                aria-label="Search medical records"
+                onChange={(e) => setFilter(e.target.value)}
+              />
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -228,7 +270,7 @@ export default function PatientDashboard() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="focus:bg-blue-50" onClick={handleLogout}>
+                <DropdownMenuItem className="focus:bg-blue-50" onClick={() => router.push("/auth/login")}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
@@ -239,97 +281,75 @@ export default function PatientDashboard() {
 
         {/* Dashboard Content */}
         <main className="flex-1 p-6 overflow-y-auto">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900 animate-in fade-in">Patient Dashboard</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">Medical Records Portal</h2>
 
-          {/* Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {dashboardMetrics.length > 0 ? (
-              dashboardMetrics.map((metric) => (
-                <div
-                  key={metric.title}
-                  className="bg-white p-4 rounded-lg shadow flex items-center gap-4 transform transition-all hover:-translate-y-1 focus-within:ring-2 focus-within:ring-blue-500"
-                  tabIndex={0}
-                  aria-label={metric.title}
-                >
-                  <div className={`p-2 rounded-full bg-${metric.color.split("-")[1]}-100`}>
-                    <metric.icon className={`h-6 w-6 ${metric.color}`} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">{metric.title}</h3>
-                    <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No metrics available</p>
-            )}
-          </div>
-
-          {/* Calendar Section */}
-          <div className="bg-white p-6 rounded-lg shadow mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Appointments Calendar</h3>
-            <FullCalendar
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              events={calendarEvents}
-              headerToolbar={{
-                left: "prev,next today",
-                center: "title",
-                right: "dayGridMonth,timeGridWeek,timeGridDay",
-              }}
-              editable={true}
-              selectable={true}
-              height="auto"
-            />
-          </div>
-
-          {/* Recent Medical Records */}
+          {/* Medical Records Table */}
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Recent Medical Records</h3>
-              <Select value={selectedRecord} onValueChange={setSelectedRecord}>
-                <SelectTrigger className="w-[180px] focus:ring-2 focus:ring-blue-500" aria-label="Filter medical records by type">
-                  <SelectValue placeholder="Filter by Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Records</SelectItem>
-                  <SelectItem value="lab-result">Lab Result</SelectItem>
-                  <SelectItem value="consultation">Consultation</SelectItem>
-                </SelectContent>
-              </Select>
+              <h3 className="text-xl font-semibold text-gray-900">Your Medical Records</h3>
+              <div className="flex items-center gap-4">
+                <Select value={filter} onValueChange={setFilter}>
+                  <SelectTrigger className="w-[180px] focus:ring-2 focus:ring-blue-500" aria-label="Filter medical records">
+                    <SelectValue placeholder="Filter Records" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Records</SelectItem>
+                    <SelectItem value="follow-up">Follow-Up Needed</SelectItem>
+                    <SelectItem value="no-follow-up">No Follow-Up</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={() => setSortByFollowUp(!sortByFollowUp)}
+                  className="flex items-center gap-2"
+                  aria-label={sortByFollowUp ? "Sort by date" : "Sort by follow-up status"}
+                >
+                  <FileText className="h-4 w-4" />
+                  {sortByFollowUp ? "Sort by Date" : "Sort by Follow-Up"}
+                </Button>
+              </div>
             </div>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Doctor</TableHead>
-                  <TableHead>Notes</TableHead>
+                  <TableHead>Symptoms</TableHead>
+                  <TableHead>Diagnosis</TableHead>
+                  <TableHead>Cause of Visit</TableHead>
+                  <TableHead>Prescription</TableHead>
+                  <TableHead>Clinician</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Follow-Up</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentMedicalRecords.length > 0 ? (
-                  recentMedicalRecords
-                    .filter(
-                      (record) =>
-                        selectedRecord === "all" ||
-                        record.type.toLowerCase().replace(" ", "-") === selectedRecord
-                    )
-                    .map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          {record.date}
-                        </TableCell>
-                        <TableCell>{record.type}</TableCell>
-                        <TableCell>{record.doctor}</TableCell>
-                        <TableCell>{record.notes}</TableCell>
-                      </TableRow>
-                    ))
+                {filteredRecords.length > 0 ? (
+                  filteredRecords.map((record) => (
+                    <TableRow
+                      key={record.id}
+                      className={cn(record.followUpNeeded && "bg-yellow-50")}
+                    >
+                      <TableCell className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        {record.date}
+                      </TableCell>
+                      <TableCell>{record.symptoms.join(", ") || "None"}</TableCell>
+                      <TableCell>{record.diagnosis}</TableCell>
+                      <TableCell>{record.causeOfVisit}</TableCell>
+                      <TableCell>{record.prescription.join(", ") || "None"}</TableCell>
+                      <TableCell>{record.clinician}</TableCell>
+                      <TableCell>{record.department}</TableCell>
+                      <TableCell>
+                        <Badge variant={record.followUpNeeded ? "destructive" : "default"}>
+                          {record.followUpNeeded ? `Yes (${record.followUpDate})` : "No"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-gray-500">
-                      No records available
+                    <TableCell colSpan={8} className="text-center text-gray-500">
+                      No medical records found
                     </TableCell>
                   </TableRow>
                 )}
@@ -348,9 +368,6 @@ export default function PatientDashboard() {
           50% {
             transform: translateY(-4px);
           }
-        }
-        .animate-float {
-          animation: float 4s ease-in-out infinite;
         }
       `}</style>
     </div>
