@@ -62,11 +62,11 @@ interface SidebarLink {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-interface User {
-  id: number;
-  name: string;
-  role: "Admin" | "Clinician" | "Driver";
-  status: "Active" | "Inactive";
+interface Ambulance {
+  id: string;
+  license: string;
+  model: string;
+  status: "Available" | "In Transit" | "Occupied" | "In Repair" | "Unavailable";
 }
 
 const sidebarLinks: SidebarLink[] = [
@@ -79,25 +79,25 @@ const sidebarLinks: SidebarLink[] = [
   { title: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
-const initialUsers: User[] = [
-  { id: 1, name: "Dr. Alice Brown", role: "Clinician", status: "Active" },
-  { id: 2, name: "Bob Carter", role: "Driver", status: "Active" },
-  { id: 3, name: "Charlie Davis", role: "Clinician", status: "Inactive" },
-  { id: 4, name: "Dana Evans", role: "Admin", status: "Active" },
-  { id: 5, name: "Eve Franklin", role: "Driver", status: "Active" },
+const initialAmbulances: Ambulance[] = [
+  { id: "AMB-001", license: "ABC123", model: "Ford Transit", status: "Available" },
+  { id: "AMB-002", license: "DEF456", model: "Mercedes Sprinter", status: "In Transit" },
+  { id: "AMB-003", license: "GHI789", model: "Ford Transit", status: "Occupied" },
+  { id: "AMB-004", license: "JKL012", model: "Mercedes Sprinter", status: "In Repair" },
+  { id: "AMB-005", license: "MNO345", model: "Ford Transit", status: "Unavailable" },
 ];
 
-export default function UserManagement() {
+export default function AmbulanceManagement() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [ambulances, setAmbulances] = useState<Ambulance[]>(initialAmbulances);
+  const [selectedAmbulance, setSelectedAmbulance] = useState<Ambulance | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [formData, setFormData] = useState<{ name: string; role: "Admin" | "Clinician" | "Driver"; status: "Active" | "Inactive" }>({
-    name: "",
-    role: "Clinician",
-    status: "Active",
+  const [formData, setFormData] = useState<{ license: string; model: string; status: "Available" | "In Transit" | "Occupied" | "In Repair" | "Unavailable" }>({
+    license: "",
+    model: "",
+    status: "Available",
   });
   const pathname = usePathname();
   const router = useRouter();
@@ -110,56 +110,61 @@ export default function UserManagement() {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const handleSelectChange = (value: string, field: string) => {
-    setFormData({ ...formData, [field]: value });
+  const handleSelectChange = (value: string) => {
+    setFormData({ ...formData, status: value as any });
   };
 
-  const handleAddUser = () => {
-    const newUser = {
-      id: users.length + 1,
+  const generateId = () => {
+    const num = ambulances.length + 1;
+    return `AMB-${num.toString().padStart(3, "0")}`;
+  };
+
+  const handleAddAmbulance = () => {
+    const newAmbulance = {
+      id: generateId(),
       ...formData,
     };
-    setUsers([...users, newUser]);
+    setAmbulances([...ambulances, newAmbulance]);
     setIsAddModalOpen(false);
-    setFormData({ name: "", role: "Clinician", status: "Active" });
+    setFormData({ license: "", model: "", status: "Available" });
   };
 
-  const handleEditUser = () => {
-    if (selectedUser) {
-      const updatedUsers = users.map((user) =>
-        user.id === selectedUser.id ? { ...user, ...formData } : user
+  const handleEditAmbulance = () => {
+    if (selectedAmbulance) {
+      const updatedAmbulances = ambulances.map((amb) =>
+        amb.id === selectedAmbulance.id ? { ...amb, ...formData } : amb
       );
-      setUsers(updatedUsers);
+      setAmbulances(updatedAmbulances);
       setIsEditModalOpen(false);
-      setSelectedUser(null);
+      setSelectedAmbulance(null);
     }
   };
 
-  const handleDeleteUser = () => {
-    if (selectedUser) {
-      const updatedUsers = users.filter((user) => user.id !== selectedUser.id);
-      setUsers(updatedUsers);
+  const handleDeleteAmbulance = () => {
+    if (selectedAmbulance) {
+      const updatedAmbulances = ambulances.filter((amb) => amb.id !== selectedAmbulance.id);
+      setAmbulances(updatedAmbulances);
       setIsDeleteModalOpen(false);
-      setSelectedUser(null);
+      setSelectedAmbulance(null);
     }
   };
 
-  const openEditModal = (user: User) => {
-    setSelectedUser(user);
-    setFormData({ name: user.name, role: user.role, status: user.status });
+  const handleSetStatus = (ambulance: Ambulance, newStatus: Ambulance["status"]) => {
+    const updatedAmbulances = ambulances.map((amb) =>
+      amb.id === ambulance.id ? { ...amb, status: newStatus } : amb
+    );
+    setAmbulances(updatedAmbulances);
+  };
+
+  const openEditModal = (ambulance: Ambulance) => {
+    setSelectedAmbulance(ambulance);
+    setFormData({ license: ambulance.license, model: ambulance.model, status: ambulance.status });
     setIsEditModalOpen(true);
   };
 
-  const openDeleteModal = (user: User) => {
-    setSelectedUser(user);
+  const openDeleteModal = (ambulance: Ambulance) => {
+    setSelectedAmbulance(ambulance);
     setIsDeleteModalOpen(true);
-  };
-
-  const handleSuspendUser = (user: User) => {
-    const updatedUsers = users.map((u) =>
-      u.id === user.id ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" } : u
-    );
-    setUsers(updatedUsers);
   };
 
   return (
@@ -230,7 +235,7 @@ export default function UserManagement() {
           <div className="flex-1 flex items-center">
             <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input className="pl-10 focus:ring-2 focus:ring-blue-500" placeholder="Search users..." aria-label="Search users" />
+              <Input className="pl-10 focus:ring-2 focus:ring-blue-500" placeholder="Search ambulances..." aria-label="Search ambulances" />
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -268,47 +273,40 @@ export default function UserManagement() {
           </div>
         </header>
 
-        {/* User Management Content */}
+        {/* Ambulance Management Content */}
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">User Management</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Ambulance Management</h2>
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="default">Add User</Button>
+                <Button variant="default">Add Ambulance</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogTitle>Add New Ambulance</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
+                    <Label htmlFor="license" className="text-right">
+                      License
                     </Label>
                     <Input
-                      id="name"
-                      value={formData.name}
+                      id="license"
+                      value={formData.license}
                       onChange={handleInputChange}
                       className="col-span-3"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">
-                      Role
+                    <Label htmlFor="model" className="text-right">
+                      Model
                     </Label>
-                    <Select
-                      value={formData.role}
-                      onValueChange={(value) => handleSelectChange(value, "role")}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="Clinician">Clinician</SelectItem>
-                        <SelectItem value="Driver">Driver</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="model"
+                      value={formData.model}
+                      onChange={handleInputChange}
+                      className="col-span-3"
+                    />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="status" className="text-right">
@@ -316,20 +314,23 @@ export default function UserManagement() {
                     </Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value) => handleSelectChange(value, "status")}
+                      onValueChange={handleSelectChange}
                     >
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="Available">Available</SelectItem>
+                        <SelectItem value="In Transit">In Transit</SelectItem>
+                        <SelectItem value="Occupied">Occupied</SelectItem>
+                        <SelectItem value="In Repair">In Repair</SelectItem>
+                        <SelectItem value="Unavailable">Unavailable</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleAddUser}>Add User</Button>
+                  <Button onClick={handleAddAmbulance}>Add Ambulance</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -339,31 +340,47 @@ export default function UserManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>ID</TableHead>
+                  <TableHead>License</TableHead>
+                  <TableHead>Model</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.length > 0 ? (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.role}</TableCell>
+                {ambulances.length > 0 ? (
+                  ambulances.map((ambulance) => (
+                    <TableRow key={ambulance.id}>
+                      <TableCell>{ambulance.id}</TableCell>
+                      <TableCell>{ambulance.license}</TableCell>
+                      <TableCell>{ambulance.model}</TableCell>
                       <TableCell>
-                        <Badge variant={user.status === "Active" ? "default" : "destructive"}>
-                          {user.status}
+                        <Badge
+                          variant={
+                            ambulance.status === "Available"
+                              ? "success"
+                              : ambulance.status === "In Transit" || ambulance.status === "Occupied"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                        >
+                          {ambulance.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openEditModal(user)}>
+                        <Button variant="outline" size="sm" onClick={() => handleSetStatus(ambulance, "Available")}>
+                          Mark Available
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleSetStatus(ambulance, "In Repair")}>
+                          Mark In Repair
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleSetStatus(ambulance, "Unavailable")}>
+                          Mark Unavailable
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openEditModal(ambulance)}>
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleSuspendUser(user)}>
-                          {user.status === "Active" ? "Suspend" : "Activate"}
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => openDeleteModal(user)}>
+                        <Button variant="destructive" size="sm" onClick={() => openDeleteModal(ambulance)}>
                           Delete
                         </Button>
                       </TableCell>
@@ -371,8 +388,8 @@ export default function UserManagement() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-gray-500">
-                      No users available
+                    <TableCell colSpan={5} className="text-center text-gray-500">
+                      No ambulances available
                     </TableCell>
                   </TableRow>
                 )}
@@ -386,37 +403,30 @@ export default function UserManagement() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>Edit Ambulance</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
+              <Label htmlFor="license" className="text-right">
+                License
               </Label>
               <Input
-                id="name"
-                value={formData.name}
+                id="license"
+                value={formData.license}
                 onChange={handleInputChange}
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
-                Role
+              <Label htmlFor="model" className="text-right">
+                Model
               </Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => handleSelectChange(value, "role")}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Clinician">Clinician</SelectItem>
-                  <SelectItem value="Driver">Driver</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="model"
+                value={formData.model}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="status" className="text-right">
@@ -424,20 +434,23 @@ export default function UserManagement() {
               </Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => handleSelectChange(value, "status")}
+                onValueChange={handleSelectChange}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="In Transit">In Transit</SelectItem>
+                  <SelectItem value="Occupied">Occupied</SelectItem>
+                  <SelectItem value="In Repair">In Repair</SelectItem>
+                  <SelectItem value="Unavailable">Unavailable</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleEditUser}>Save Changes</Button>
+            <Button onClick={handleEditAmbulance}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -448,12 +461,12 @@ export default function UserManagement() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>Are you sure you want to delete {selectedUser?.name}?</p>
+          <p>Are you sure you want to delete ambulance {selectedAmbulance?.id}?</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteUser}>
+            <Button variant="destructive" onClick={handleDeleteAmbulance}>
               Delete
             </Button>
           </DialogFooter>
